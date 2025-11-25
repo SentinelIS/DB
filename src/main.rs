@@ -1,38 +1,112 @@
 mod storage;
 mod wal;
+mod parser;
+mod engine;
 
-use storage::{StorageEngine, Page};
-use wal::{WriteAheadLog, WalRecord};
+use std::io::{self, Write};
+use storage::StorageEngine;
+use wal::WriteAheadLog;
+use parser::{Command, Parser};
 
 fn main() {
-    println!("DBMS starting...");
+    println!("IsentaDB v0.1.0");
+    println!("Type 'help' for commands, 'exit' to quit\n");
 
-    let mut storage = StorageEngine::new("data.db");
-    let mut wal = WriteAheadLog::new("data.wal");
+    // Initialize storage and WAL
+    let _storage = StorageEngine::new("data.db");
+    let _wal = WriteAheadLog::new("data.wal");
+    let mut query_engine = engine::QueryEngine::new();
+    let parser = Parser::new();
 
-    // Create and modify a page
-    let mut page = storage.allocate_page();
+    // Simple REPL loop
+    loop {
+        print!("isenta> ");
+        io::stdout().flush().unwrap();
 
-    // Change some data on the page
-    let value = 1234u32.to_le_bytes();
-    page.data[0..4].copy_from_slice(&value);
+        let mut input = String::new();
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => {}
+            Err(_) => {
+                println!("Error reading input");
+                continue;
+            }
+        }
 
-    // Write WAL record
-    let record = WalRecord {
-        page_id: page.id,
-        offset: 0,
-        length: 4,
-        data: value.to_vec(),
-    };
-    wal.append(&record);
+        let input = input.trim();
 
-    // Write page to storage
-    storage.write_page(&page);
+        // Skip empty input
+        if input.is_empty() {
+            continue;
+        }
 
-    // Test: Read back the page
-    let read_page = storage.read_page(page.id);
-    let num = u32::from_le_bytes(read_page.data[0..4].try_into().unwrap());
+        // Handle special commands
+        match input.to_lowercase().as_str() {
+            "exit" | "quit" => {
+                println!("Goodbye!");
+                break;
+            }
+            "help" => {
+                print_help();
+                continue;
+            }
+            _ => {}
+        }
 
-    println!("Read number from page: {}", num);
+        // Parse and execute SQL command
+        let command = parser.parse(input);
+        match command {
+            Command::CreateTable { name, columns } => {
+                match query_engine.execute_create_table(name.clone(), columns.clone()) {
+                    Ok(_) => println!("Table '{}' created successfully", name),
+                    Err(e) => println!("Error: {}", e),
+                }
+            }
+            Command::Insert { table, values } => {
+                match query_engine.execute_insert(table.clone(), values.clone()) {
+                    Ok(_) => println!("Inserted {} row(s) into '{}'", 1, table),
+                    Err(e) => println!("Error: {}", e),
+                }
+            }
+            Command::Select { table, columns: _ } => {
+                match query_engine.execute_select(table.clone()) {
+                    Ok(rows) => {
+                        if rows.is_empty() {
+                            println!("No rows found");
+                        } else {
+                            // Print header
+                            if let Some(schema) = query_engine.get_table_schema(&table) {
+                                let header: Vec<String> = schema
+                                    .columns
+                                    .iter()
+                                    .map(|c| format!("{} ({})", c.name, c.data_type))
+                                    .collect();
+                                println!("{}", header.join(" | "));
+                                println!("{}", "-".repeat(header.join(" | ").len()));
+
+                                // Print rows
+                                for row in rows {
+                                    println!("{}", row.values.join(" | "));
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => println!("Error: {}", e),
+                }
+            }
+            Command::Unknown(cmd) => {
+                println!("Unknown command: {}", cmd);
+                println!("Type 'help' for available commands");
+            }
+        }
+    }
+}
+
+fn print_help() {
+    println!("\nAvailable commands:");
+    println!("  CREATE TABLE <name> (<columns>)");
+    println!("  INSERT INTO <table> VALUES (<values>)");
+    println!("  SELECT * FROM <table>");
+    println!("  help  - Show this help message");
+    println!("  exit  - Quit the database\n");
 }
 
