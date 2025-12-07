@@ -137,6 +137,19 @@ fn main() {
                     println!("Table '{}' not found", table);
                 }
             }
+
+            Command::ShowTables => {
+                let tables = catalog.list_tables();
+                if tables.is_empty() {
+                    println!("No tables in database");
+                } else {
+                    println!("Tables:");
+                    for table in tables {
+                        println!("- {}", table);
+                    }
+                }
+            }
+
             Command::Unknown(cmd) => {
                 println!("Unknown command: {}", cmd);
                 println!("Type 'help' for available commands");

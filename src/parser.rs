@@ -12,6 +12,7 @@ pub enum Command {
         table: String,
         columns: Vec<String>, // For now, just support *
     },
+    ShowTables,
     Unknown(String),
 }
 
@@ -38,6 +39,8 @@ impl Parser {
             self.parse_insert(input)
         } else if input_upper.starts_with("SELECT") {
             self.parse_select(input)
+        } else if input_upper.starts_with("SHOW TABLES") {
+            Command::ShowTables
         } else {
             Command::Unknown(input.to_string())
         }
