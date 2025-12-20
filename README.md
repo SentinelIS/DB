@@ -32,3 +32,9 @@ To run the project type this in your terminal:
 ```bash
 cargo run
 ```
+
+To run the GUI run this:
+
+```bash
+npm run tauri dev
+```
