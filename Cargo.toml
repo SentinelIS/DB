@@ -3,6 +3,21 @@ name = "rust_dbms"
 version = "0.1.0"
 edition = "2021"
 
+# The lib section defines the library crate that contains the shared logic.
+# This allows both the CLI and the server to use the same code.
+[lib]
+name = "rust_dbms"
+path = "src/lib.rs"
+
+# The bin sections define the two executable crates.
+[[bin]]
+name = "isenta_db_cli"
+path = "src/main.rs"
+
+[[bin]]
+name = "isenta_db_server"
+path = "src/bin/server.rs"
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
