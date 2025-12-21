@@ -1,12 +1,26 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" href="styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IsentaDB</title>
-  </head>
-  <body>
-    <h1>IsentaDB</h1>
-  </body>
-  </html>
+    <title>IsentaDB GUI</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="main.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>IsentaDB</h1>
+        <p>A simple GUI to interact with the IsentaDB server.</p>
+
+        <div class="query-area">
+            <textarea id="query-input" rows="5" placeholder="Enter your SQL query... e.g., SHOW TABLES"></textarea>
+            <button id="submit-query">Execute Query</button>
+        </div>
+
+        <div class="result-area">
+            <h2>Result</h2>
+            <pre id="query-result">The query result will appear here.</pre>
+        </div>
+    </div>
+</body>
+</html>

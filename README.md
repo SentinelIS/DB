@@ -30,7 +30,14 @@ cargo build
 To run the project type this in your terminal:
 
 ```bash
-cargo run
+# CLI
+cargo run --bin isenta_db_cli
+
+# Server
+cargo run --bin isenta_db_server
+
+# GUI
+npm run tauri dev
 ```
 
 To run the GUI run this:

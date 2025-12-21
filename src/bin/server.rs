@@ -26,38 +26,38 @@ fn handle_client(mut stream: TcpStream) {
     let mut query_engine = QueryEngine::new();
     let parser = Parser::new();
 
-    let mut buffer = [0; 1024]; // A buffer for reading incoming data.
+    let mut buffer = [0; 4096]; // Increased buffer size for potentially larger queries
 
-    loop {
-        match stream.read(&mut buffer) {
-            Ok(size) => {
-                // If size is 0, the client has closed the connection.
-                if size == 0 {
-                    println!("Client disconnected.");
-                    break;
-                }
-
-                // Convert the received bytes to a string, trimming whitespace.
-                let input = String::from_utf8_lossy(&buffer[..size]).trim().to_string();
-
-                // Process the command using the shared `execute_line` function.
-                if !input.is_empty() {
-                    let result = execute_line(&input, &mut query_engine, &parser);
-                    
-                    // Send the result back to the client. A newline is appended
-                    // to help clients with line-based reading.
-                    if let Err(e) = stream.write_all(format!("{}\n", result).as_bytes()) {
-                        eprintln!("Failed to write to stream: {}", e);
-                        break;
-                    }
-                }
+    // A connection now handles a single query and then closes.
+    // This is a simpler request/response model that prevents the client from hanging
+    // while waiting for a stream to end.
+    match stream.read(&mut buffer) {
+        Ok(size) => {
+            // If size is 0, the client connected and disconnected without sending data.
+            if size == 0 {
+                println!("Client disconnected without sending data.");
+                return;
             }
-            Err(e) => {
-                eprintln!("An error occurred, terminating connection: {}", e);
-                break;
+
+            // Convert the received bytes to a string, trimming whitespace.
+            let input = String::from_utf8_lossy(&buffer[..size]).trim().to_string();
+
+            // Process the command using the shared `execute_line` function.
+            if !input.is_empty() {
+                let result = execute_line(&input, &mut query_engine, &parser);
+                
+                // Send the raw result back to the client. `execute_line` handles formatting.
+                if let Err(e) = stream.write_all(result.as_bytes()) {
+                    eprintln!("Failed to write to stream: {}", e);
+                }
             }
         }
+        Err(e) => {
+            eprintln!("An error occurred reading from connection: {}", e);
+        }
     }
+    // The `stream` goes out of scope here, and the connection is automatically closed.
+    // This is what signals EOF to the client's `read_to_end()` call.
 }
 
 fn main() {
