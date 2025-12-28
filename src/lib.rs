@@ -115,6 +115,12 @@ pub fn execute_line(input: &str, query_engine: &mut QueryEngine, parser: &Parser
                 Err(e) => format!("Error: {}", e),
             }
         }
+        Command::Truncate { table } => {
+            match query_engine.execute_truncate_table(table.clone()) {
+                Ok(_) => format!("Table '{}' truncated successfully", table),
+                Err(e) => format!("Error: {}", e),
+            }
+        }
         Command::Unknown(cmd) => {
             format!("Unknown command: {}\nType 'help' for available commands", cmd)
         }
@@ -131,6 +137,7 @@ fn print_help() -> String {
     "  SELECT * FROM <table_name> - Query data from a table\n" +
     "  SELECT * FROM <table_name> WHERE <column> [=, !=, <, >, <=, >=, LIKE, NOT LIKE] <value> - Query data with a where clause\n" +
     "  UPDATE <table_name> SET <column> = <value> WHERE <column> [=, !=, <, >, <=, >=, LIKE, NOT LIKE] <value> - Update data in a table\n" +
+    "  TRUNCATE TABLE <table_name> - Remove all rows from a table\n" +
     "  INSPECT <table_name> - Show table schema and column types\n" +
     "  SHOW TABLES - List all tables in the database\n" +
     "  help - Show this help message\n" +

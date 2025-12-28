@@ -26,6 +26,9 @@ pub enum Command {
         set_value: String,
         where_clause: Option<WhereClause>,
     },
+    Truncate {
+        table: String,
+    },
     ShowTables,
     InspectTable {
         name: String,
@@ -58,6 +61,8 @@ impl Parser {
             self.parse_select(input)
         } else if input_upper.starts_with("UPDATE") {
             self.parse_update(input)
+        } else if input_upper.starts_with("TRUNCATE TABLE") {
+            self.parse_truncate(input)
         } else if input_upper.starts_with("SHOW TABLES") {
             Command::ShowTables
         } else if input_upper.starts_with("INSPECT") {
@@ -268,6 +273,23 @@ impl Parser {
             set_column,
             set_value,
             where_clause,
+        }
+    }
+
+    fn parse_truncate(&self, input: &str) -> Command {
+        // Format: TRUNCATE TABLE table_name
+        let input_upper = input.to_uppercase();
+        let rest = match input_upper.strip_prefix("TRUNCATE TABLE") {
+            Some(r) => r.trim(),
+            None => return Command::Unknown(input.to_string()),
+        };
+
+        if rest.is_empty() {
+            return Command::Unknown(input.to_string());
+        }
+
+        Command::Truncate {
+            table: rest.to_string(),
         }
     }
 

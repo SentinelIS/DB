@@ -286,6 +286,20 @@ impl QueryEngine {
         Ok(updated_count)
     }
 
+    pub fn execute_truncate_table(&mut self, table_name: String) -> Result<(), String> {
+        let table = self
+            .catalog
+            .find_table_mut(&table_name)
+            .ok_or_else(|| format!("Table '{}' does not exist", table_name))?;
+
+        table.rows.clear();
+        
+        let table_clone = table.clone();
+        self.database.update_table_data(&table_clone)?;
+
+        Ok(())
+    }
+
     pub fn get_table_schema(&self, table: &str) -> Option<&Table> {
         self.catalog.find_table(table)
     }
