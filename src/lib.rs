@@ -121,6 +121,20 @@ pub fn execute_line(input: &str, query_engine: &mut QueryEngine, parser: &Parser
                 Err(e) => format!("Error: {}", e),
             }
         }
+        Command::Get { table, format } => {
+            if format.to_uppercase() == "JSON" {
+                if let Some(table_data) = query_engine.get_table_schema(&table) {
+                    match serde_json::to_string_pretty(&table_data) {
+                        Ok(json) => json,
+                        Err(e) => format!("Error serializing to JSON: {}", e),
+                    }
+                } else {
+                    format!("Table '{}' not found", table)
+                }
+            } else {
+                format!("Unsupported format: {}", format)
+            }
+        }
         Command::Unknown(cmd) => {
             format!("Unknown command: {}\nType 'help' for available commands", cmd)
         }
@@ -138,6 +152,7 @@ fn print_help() -> String {
     "  SELECT * FROM <table_name> WHERE <column> [=, !=, <, >, <=, >=, LIKE, NOT LIKE] <value> - Query data with a where clause\n" +
     "  UPDATE <table_name> SET <column> = <value> WHERE <column> [=, !=, <, >, <=, >=, LIKE, NOT LIKE] <value> - Update data in a table\n" +
     "  TRUNCATE TABLE <table_name> - Remove all rows from a table\n" +
+    "  GET <table_name> AS JSON - Get a table's data in JSON format\n" +
     "  INSPECT <table_name> - Show table schema and column types\n" +
     "  SHOW TABLES - List all tables in the database\n" +
     "  help - Show this help message\n" +

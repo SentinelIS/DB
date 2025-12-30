@@ -1,4 +1,6 @@
-#[derive(Debug, PartialEq, Clone)]
+use serde::Serialize;
+
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct WhereClause {
     pub column: String,
     pub operator: String,
@@ -29,6 +31,10 @@ pub enum Command {
     Truncate {
         table: String,
     },
+    Get {
+        table: String,
+        format: String,
+    },
     ShowTables,
     InspectTable {
         name: String,
@@ -36,7 +42,7 @@ pub enum Command {
     Unknown(String),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct Column {
     pub name: String,
     pub data_type: String,
@@ -63,6 +69,8 @@ impl Parser {
             self.parse_update(input)
         } else if input_upper.starts_with("TRUNCATE TABLE") {
             self.parse_truncate(input)
+        } else if input_upper.starts_with("GET") {
+            self.parse_get(input)
         } else if input_upper.starts_with("SHOW TABLES") {
             Command::ShowTables
         } else if input_upper.starts_with("INSPECT") {
@@ -290,6 +298,32 @@ impl Parser {
 
         Command::Truncate {
             table: rest.to_string(),
+        }
+    }
+
+    fn parse_get(&self, input: &str) -> Command {
+        // Format: GET <tablename> AS JSON
+        let input_upper = input.to_uppercase();
+        let rest = match input_upper.strip_prefix("GET") {
+            Some(r) => r.trim(),
+            None => return Command::Unknown(input.to_string()),
+        };
+
+        let parts: Vec<&str> = rest.split(" AS ").collect();
+        if parts.len() != 2 {
+            return Command::Unknown(input.to_string());
+        }
+
+        let table_name = parts[0].trim().to_string();
+        let format = parts[1].trim().to_string();
+
+        if format.to_uppercase() == "JSON" {
+            Command::Get {
+                table: table_name,
+                format,
+            }
+        } else {
+            Command::Unknown(format!("Unsupported format: {}", format))
         }
     }
 

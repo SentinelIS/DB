@@ -1,14 +1,15 @@
 use crate::parser::{Column, WhereClause};
 use regex::Regex;
+use serde::Serialize;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Table {
     pub name: String,
     pub columns: Vec<Column>,
     pub rows: Vec<Row>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Row {
     pub values: Vec<String>,
 }
